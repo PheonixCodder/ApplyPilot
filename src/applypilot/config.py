@@ -43,9 +43,12 @@ def get_chrome_path() -> str:
 
     if system == "Windows":
         candidates = [
-            Path(os.environ.get("PROGRAMFILES", r"C:\Program Files")) / "Google/Chrome/Application/chrome.exe",
-            Path(os.environ.get("PROGRAMFILES(X86)", r"C:\Program Files (x86)")) / "Google/Chrome/Application/chrome.exe",
-            Path(os.environ.get("LOCALAPPDATA", "")) / "Google/Chrome/Application/chrome.exe",
+            Path(os.environ.get("PROGRAMFILES", r"C:\Program Files")) /
+            "Google/Chrome/Application/chrome.exe",
+            Path(os.environ.get("PROGRAMFILES(X86)", r"C:\Program Files (x86)")
+                 ) / "Google/Chrome/Application/chrome.exe",
+            Path(os.environ.get("LOCALAPPDATA", "")) /
+            "Google/Chrome/Application/chrome.exe",
         ]
     elif system == "Darwin":
         candidates = [
@@ -206,7 +209,8 @@ def get_tier() -> int:
     """
     load_env()
 
-    has_llm = any(os.environ.get(k) for k in ("GEMINI_API_KEY", "OPENAI_API_KEY", "LLM_URL"))
+    has_llm = any(os.environ.get(k)
+                  for k in ("GEMINI_API_KEY", "OPENROUTER_API_KEY", "OPENAI_API_KEY", "LLM_URL"))
     if not has_llm:
         return 1
 
@@ -238,19 +242,23 @@ def check_tier(required: int, feature: str) -> None:
     _console = Console(stderr=True)
 
     missing: list[str] = []
-    if required >= 2 and not any(os.environ.get(k) for k in ("GEMINI_API_KEY", "OPENAI_API_KEY", "LLM_URL")):
-        missing.append("LLM API key — run [bold]applypilot init[/bold] or set GEMINI_API_KEY")
+    if required >= 2 and not any(os.environ.get(k) for k in ("OPENROUTER_API_KEY", "GEMINI_API_KEY", "OPENAI_API_KEY", "LLM_URL")):
+        missing.append(
+            "LLM API key — run [bold]applypilot init[/bold] or set OPENROUTER_API_KEY")
     if required >= 3:
         if not shutil.which("claude"):
-            missing.append("Claude Code CLI — install from [bold]https://claude.ai/code[/bold]")
+            missing.append(
+                "Claude Code CLI — install from [bold]https://claude.ai/code[/bold]")
         try:
             get_chrome_path()
         except FileNotFoundError:
             missing.append("Chrome/Chromium — install or set CHROME_PATH")
 
     _console.print(
-        f"\n[red]'{feature}' requires {TIER_LABELS.get(required, f'Tier {required}')} (Tier {required}).[/red]\n"
-        f"Current tier: {TIER_LABELS.get(current, f'Tier {current}')} (Tier {current})."
+        f"\n[red]'{feature}' requires {TIER_LABELS.get(required, f'Tier {required}')} (Tier {
+            required}).[/red]\n"
+        f"Current tier: {TIER_LABELS.get(current, f'Tier {current}')} (Tier {
+            current})."
     )
     if missing:
         _console.print("\n[yellow]Missing:[/yellow]")

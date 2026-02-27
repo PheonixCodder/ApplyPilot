@@ -21,6 +21,7 @@ log = logging.getLogger(__name__)
 # Provider detection
 # ---------------------------------------------------------------------------
 
+
 def _detect_provider() -> tuple[str, str, str]:
     """Return (base_url, model, api_key) based on environment variables.
 
@@ -28,22 +29,29 @@ def _detect_provider() -> tuple[str, str, str]:
     in _bootstrap() is always visible here.
     """
     gemini_key = os.environ.get("GEMINI_API_KEY", "")
+    openrouter_key = os.environ.get("OPENROUTER_API_KEY", "")
     openai_key = os.environ.get("OPENAI_API_KEY", "")
     local_url = os.environ.get("LLM_URL", "")
     model_override = os.environ.get("LLM_MODEL", "")
 
     if gemini_key and not local_url:
         return (
-            "https://generativelanguage.googleapis.com/v1beta/openai",
-            model_override or "gemini-2.0-flash",
+            "https://openrouter.ai/api/v1",
+            model_override or "stepfun/step-3.5-flash:free",
             gemini_key,
         )
 
+    if openrouter_key and not local_url:
+        return (
+            "https://openrouter.ai/api/v1",
+            model_override or "stepfun/step-3.5-flash:free",
+            openai_key,
+        )
     if openai_key and not local_url:
         return (
             "https://api.openai.com/v1",
             model_override or "gpt-4o-mini",
-            openai_key,
+            openrouter_key,
         )
 
     if local_url:
@@ -55,7 +63,7 @@ def _detect_provider() -> tuple[str, str, str]:
 
     raise RuntimeError(
         "No LLM provider configured. "
-        "Set GEMINI_API_KEY, OPENAI_API_KEY, or LLM_URL in your environment."
+        "Set GEMINI_API_KEY, OPENAI_API_KEY, OPENROUTER_API_KEY, or LLM_URL in your environment."
     )
 
 
@@ -197,7 +205,8 @@ class LLMClient:
         if "qwen" in self.model.lower() and messages:
             first = messages[0]
             if first.get("role") == "user" and not first["content"].startswith("/no_think"):
-                messages = [{"role": first["role"], "content": f"/no_think\n{first['content']}"}] + messages[1:]
+                messages = [
+                    {"role": first["role"], "content": f"/no_think\n{first['content']}"}] + messages[1:]
 
         for attempt in range(_MAX_RETRIES):
             try:
@@ -275,6 +284,7 @@ class LLMClient:
 
 class _GeminiCompatForbidden(Exception):
     """Sentinel: Gemini OpenAI-compat returned 403. Switch to native API."""
+
     def __init__(self, response: httpx.Response) -> None:
         self.response = response
         super().__init__(f"Gemini compat 403: {response.text[:200]}")

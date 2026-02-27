@@ -83,10 +83,14 @@ def run(
             "Defaults to 'all' if omitted."
         ),
     ),
-    min_score: int = typer.Option(7, "--min-score", help="Minimum fit score for tailor/cover stages."),
-    workers: int = typer.Option(1, "--workers", "-w", help="Parallel threads for discovery/enrichment stages."),
-    stream: bool = typer.Option(False, "--stream", help="Run stages concurrently (streaming mode)."),
-    dry_run: bool = typer.Option(False, "--dry-run", help="Preview stages without executing."),
+    min_score: int = typer.Option(
+        7, "--min-score", help="Minimum fit score for tailor/cover stages."),
+    workers: int = typer.Option(
+        1, "--workers", "-w", help="Parallel threads for discovery/enrichment stages."),
+    stream: bool = typer.Option(
+        False, "--stream", help="Run stages concurrently (streaming mode)."),
+    dry_run: bool = typer.Option(
+        False, "--dry-run", help="Preview stages without executing."),
     validation: str = typer.Option(
         "normal",
         "--validation",
@@ -144,19 +148,32 @@ def run(
 
 @app.command()
 def apply(
-    limit: Optional[int] = typer.Option(None, "--limit", "-l", help="Max applications to submit."),
-    workers: int = typer.Option(1, "--workers", "-w", help="Number of parallel browser workers."),
-    min_score: int = typer.Option(7, "--min-score", help="Minimum fit score for job selection."),
-    model: str = typer.Option("haiku", "--model", "-m", help="Claude model name."),
-    continuous: bool = typer.Option(False, "--continuous", "-c", help="Run forever, polling for new jobs."),
-    dry_run: bool = typer.Option(False, "--dry-run", help="Preview actions without submitting."),
-    headless: bool = typer.Option(False, "--headless", help="Run browsers in headless mode."),
-    url: Optional[str] = typer.Option(None, "--url", help="Apply to a specific job URL."),
-    gen: bool = typer.Option(False, "--gen", help="Generate prompt file for manual debugging instead of running."),
-    mark_applied: Optional[str] = typer.Option(None, "--mark-applied", help="Manually mark a job URL as applied."),
-    mark_failed: Optional[str] = typer.Option(None, "--mark-failed", help="Manually mark a job URL as failed (provide URL)."),
-    fail_reason: Optional[str] = typer.Option(None, "--fail-reason", help="Reason for --mark-failed."),
-    reset_failed: bool = typer.Option(False, "--reset-failed", help="Reset all failed jobs for retry."),
+    limit: Optional[int] = typer.Option(
+        None, "--limit", "-l", help="Max applications to submit."),
+    workers: int = typer.Option(
+        1, "--workers", "-w", help="Number of parallel browser workers."),
+    min_score: int = typer.Option(
+        7, "--min-score", help="Minimum fit score for job selection."),
+    model: str = typer.Option("haiku", "--model", "-m",
+                              help="Claude model name."),
+    continuous: bool = typer.Option(
+        False, "--continuous", "-c", help="Run forever, polling for new jobs."),
+    dry_run: bool = typer.Option(
+        False, "--dry-run", help="Preview actions without submitting."),
+    headless: bool = typer.Option(
+        False, "--headless", help="Run browsers in headless mode."),
+    url: Optional[str] = typer.Option(
+        None, "--url", help="Apply to a specific job URL."),
+    gen: bool = typer.Option(
+        False, "--gen", help="Generate prompt file for manual debugging instead of running."),
+    mark_applied: Optional[str] = typer.Option(
+        None, "--mark-applied", help="Manually mark a job URL as applied."),
+    mark_failed: Optional[str] = typer.Option(
+        None, "--mark-failed", help="Manually mark a job URL as failed (provide URL)."),
+    fail_reason: Optional[str] = typer.Option(
+        None, "--fail-reason", help="Reason for --mark-failed."),
+    reset_failed: bool = typer.Option(
+        False, "--reset-failed", help="Reset all failed jobs for retry."),
 ) -> None:
     """Launch auto-apply to submit job applications."""
     _bootstrap()
@@ -175,7 +192,8 @@ def apply(
     if mark_failed:
         from applypilot.apply.launcher import mark_job
         mark_job(mark_failed, "failed", reason=fail_reason)
-        console.print(f"[yellow]Marked as failed:[/yellow] {mark_failed} ({fail_reason or 'manual'})")
+        console.print(
+            f"[yellow]Marked as failed:[/yellow] {mark_failed} ({fail_reason or 'manual'})")
         return
 
     if reset_failed:
@@ -214,7 +232,8 @@ def apply(
         from applypilot.apply.launcher import gen_prompt, BASE_CDP_PORT
         target = url or ""
         if not target:
-            console.print("[red]--gen requires --url to specify which job.[/red]")
+            console.print(
+                "[red]--gen requires --url to specify which job.[/red]")
             raise typer.Exit(code=1)
         prompt_file = gen_prompt(target, min_score=min_score, model=model)
         if not prompt_file:
@@ -235,7 +254,8 @@ def apply(
     effective_limit = limit if limit is not None else (0 if continuous else 1)
 
     console.print("\n[bold blue]Launching Auto-Apply[/bold blue]")
-    console.print(f"  Limit:    {'unlimited' if continuous else effective_limit}")
+    console.print(
+        f"  Limit:    {'unlimited' if continuous else effective_limit}")
     console.print(f"  Workers:  {workers}")
     console.print(f"  Model:    {model}")
     console.print(f"  Headless: {headless}")
@@ -268,7 +288,8 @@ def status() -> None:
     console.print("\n[bold]ApplyPilot Pipeline Status[/bold]\n")
 
     # Summary table
-    summary = Table(title="Pipeline Overview", show_header=True, header_style="bold cyan")
+    summary = Table(title="Pipeline Overview",
+                    show_header=True, header_style="bold cyan")
     summary.add_column("Metric", style="bold")
     summary.add_column("Count", justify="right")
 
@@ -279,7 +300,8 @@ def status() -> None:
     summary.add_row("Scored by LLM", str(stats["scored"]))
     summary.add_row("Pending scoring", str(stats["unscored"]))
     summary.add_row("Tailored resumes", str(stats["tailored"]))
-    summary.add_row("Pending tailoring (7+)", str(stats["untailored_eligible"]))
+    summary.add_row("Pending tailoring (7+)",
+                    str(stats["untailored_eligible"]))
     summary.add_row("Cover letters", str(stats["with_cover_letter"]))
     summary.add_row("Ready to apply", str(stats["ready_to_apply"]))
     summary.add_row("Applied", str(stats["applied"]))
@@ -289,7 +311,8 @@ def status() -> None:
 
     # Score distribution
     if stats["score_distribution"]:
-        dist_table = Table(title="\nScore Distribution", show_header=True, header_style="bold yellow")
+        dist_table = Table(title="\nScore Distribution",
+                           show_header=True, header_style="bold yellow")
         dist_table.add_column("Score", justify="center")
         dist_table.add_column("Count", justify="right")
         dist_table.add_column("Bar")
@@ -310,7 +333,8 @@ def status() -> None:
 
     # By site
     if stats["by_site"]:
-        site_table = Table(title="\nJobs by Source", show_header=True, header_style="bold magenta")
+        site_table = Table(title="\nJobs by Source",
+                           show_header=True, header_style="bold magenta")
         site_table.add_column("Site")
         site_table.add_column("Count", justify="right")
 
@@ -354,26 +378,31 @@ def doctor() -> None:
     if PROFILE_PATH.exists():
         results.append(("profile.json", ok_mark, str(PROFILE_PATH)))
     else:
-        results.append(("profile.json", fail_mark, "Run 'applypilot init' to create"))
+        results.append(("profile.json", fail_mark,
+                       "Run 'applypilot init' to create"))
 
     # Resume
     if RESUME_PATH.exists():
         results.append(("resume.txt", ok_mark, str(RESUME_PATH)))
     elif RESUME_PDF_PATH.exists():
-        results.append(("resume.txt", warn_mark, "Only PDF found — plain-text needed for AI stages"))
+        results.append(
+            ("resume.txt", warn_mark, "Only PDF found — plain-text needed for AI stages"))
     else:
-        results.append(("resume.txt", fail_mark, "Run 'applypilot init' to add your resume"))
+        results.append(
+            ("resume.txt", fail_mark, "Run 'applypilot init' to add your resume"))
 
     # Search config
     if SEARCH_CONFIG_PATH.exists():
         results.append(("searches.yaml", ok_mark, str(SEARCH_CONFIG_PATH)))
     else:
-        results.append(("searches.yaml", warn_mark, "Will use example config — run 'applypilot init'"))
+        results.append(("searches.yaml", warn_mark,
+                       "Will use example config — run 'applypilot init'"))
 
     # jobspy (discovery dep installed separately)
     try:
         import jobspy  # noqa: F401
-        results.append(("python-jobspy", ok_mark, "Job board scraping available"))
+        results.append(("python-jobspy", ok_mark,
+                       "Job board scraping available"))
     except ImportError:
         results.append(("python-jobspy", warn_mark,
                         "pip install --no-deps python-jobspy && pip install pydantic tls-client requests markdownify regex"))
@@ -382,18 +411,23 @@ def doctor() -> None:
     import os
     has_gemini = bool(os.environ.get("GEMINI_API_KEY"))
     has_openai = bool(os.environ.get("OPENAI_API_KEY"))
+    has_openrouter = bool(os.environ.get("OPENROUTER_API_KEY"))
     has_local = bool(os.environ.get("LLM_URL"))
     if has_gemini:
         model = os.environ.get("LLM_MODEL", "gemini-2.0-flash")
         results.append(("LLM API key", ok_mark, f"Gemini ({model})"))
+    if has_openrouter:
+        model = os.environ.get("LLM_MODEL", "stepfun/step-3.5-flash:free")
+        results.append(("LLM API key", ok_mark, f"Openrouter ({model})"))
     elif has_openai:
         model = os.environ.get("LLM_MODEL", "gpt-4o-mini")
         results.append(("LLM API key", ok_mark, f"OpenAI ({model})"))
     elif has_local:
-        results.append(("LLM API key", ok_mark, f"Local: {os.environ.get('LLM_URL')}"))
+        results.append(
+            ("LLM API key", ok_mark, f"Local: {os.environ.get('LLM_URL')}"))
     else:
         results.append(("LLM API key", fail_mark,
-                        "Set GEMINI_API_KEY in ~/.applypilot/.env (run 'applypilot init')"))
+                        "Set OPENROUTER_API_KEY in ~/.applypilot/.env (run 'applypilot init')"))
 
     # --- Tier 3 checks ---
     # Claude Code CLI
@@ -423,7 +457,8 @@ def doctor() -> None:
     # CapSolver (optional)
     capsolver = os.environ.get("CAPSOLVER_API_KEY")
     if capsolver:
-        results.append(("CapSolver API key", ok_mark, "CAPTCHA solving enabled"))
+        results.append(("CapSolver API key", ok_mark,
+                       "CAPTCHA solving enabled"))
     else:
         results.append(("CapSolver API key", "[dim]optional[/dim]",
                         "Set CAPSOLVER_API_KEY in .env for CAPTCHA solving"))
@@ -442,13 +477,17 @@ def doctor() -> None:
     # Tier summary
     from applypilot.config import get_tier, TIER_LABELS
     tier = get_tier()
-    console.print(f"[bold]Current tier: Tier {tier} — {TIER_LABELS[tier]}[/bold]")
+    console.print(
+        f"[bold]Current tier: Tier {tier} — {TIER_LABELS[tier]}[/bold]")
 
     if tier == 1:
-        console.print("[dim]  → Tier 2 unlocks: scoring, tailoring, cover letters (needs LLM API key)[/dim]")
-        console.print("[dim]  → Tier 3 unlocks: auto-apply (needs Claude Code CLI + Chrome + Node.js)[/dim]")
+        console.print(
+            "[dim]  → Tier 2 unlocks: scoring, tailoring, cover letters (needs LLM API key)[/dim]")
+        console.print(
+            "[dim]  → Tier 3 unlocks: auto-apply (needs Claude Code CLI + Chrome + Node.js)[/dim]")
     elif tier == 2:
-        console.print("[dim]  → Tier 3 unlocks: auto-apply (needs Claude Code CLI + Chrome + Node.js)[/dim]")
+        console.print(
+            "[dim]  → Tier 3 unlocks: auto-apply (needs Claude Code CLI + Chrome + Node.js)[/dim]")
 
     console.print()
 

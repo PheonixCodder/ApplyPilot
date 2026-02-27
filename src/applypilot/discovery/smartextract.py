@@ -298,7 +298,8 @@ def collect_page_intelligence(url: str, headless: bool = True) -> dict:
                 summary["type"] = f"array[{len(data)}]"
                 if isinstance(data[0], dict):
                     summary["first_item_keys"] = list(data[0].keys())[:20]
-                    summary["first_item_sample"] = {k: str(v)[:100] for k, v in list(data[0].items())[:8]}
+                    summary["first_item_sample"] = {
+                        k: str(v)[:100] for k, v in list(data[0].items())[:8]}
             elif isinstance(data, dict):
                 summary["type"] = "object"
                 summary["keys"] = list(data.keys())[:20]
@@ -373,13 +374,15 @@ def judge_api_responses(api_responses: list[dict]) -> list[dict]:
         resp_type = resp.get("type", "unknown")
         if "first_item_keys" in resp:
             fields = str(resp["first_item_keys"])
-            sample = json.dumps(resp.get("first_item_sample", {}), indent=2)[:500]
+            sample = json.dumps(
+                resp.get("first_item_sample", {}), indent=2)[:500]
         elif "keys" in resp:
             fields = str(resp["keys"])
             for k, v in resp.items():
                 if k.startswith("nested_"):
                     fields += f"\n  .{k.replace('nested_', '')}: {v.get('count', '?')} items, keys={v.get('first_item_keys', '?')}"
-                    sample = json.dumps(v.get("first_item_sample", {}), indent=2)[:500]
+                    sample = json.dumps(
+                        v.get("first_item_sample", {}), indent=2)[:500]
         else:
             fields = "no structured data"
 
@@ -402,7 +405,8 @@ def judge_api_responses(api_responses: list[dict]) -> list[dict]:
             if is_relevant:
                 relevant.append(resp)
         except Exception as e:
-            log.warning("Judge ERROR for %s: %s -- keeping", resp.get("url", "?")[:80], e)
+            log.warning("Judge ERROR for %s: %s -- keeping",
+                        resp.get("url", "?")[:80], e)
             relevant.append(resp)
 
     return relevant
@@ -418,55 +422,73 @@ def format_strategy_briefing(intel: dict) -> str:
 
     # JSON-LD
     if intel["json_ld"]:
-        job_postings = [j for j in intel["json_ld"] if isinstance(j, dict) and j.get("@type") == "JobPosting"]
-        other = [j for j in intel["json_ld"] if not (isinstance(j, dict) and j.get("@type") == "JobPosting")]
+        job_postings = [j for j in intel["json_ld"] if isinstance(
+            j, dict) and j.get("@type") == "JobPosting"]
+        other = [j for j in intel["json_ld"] if not (
+            isinstance(j, dict) and j.get("@type") == "JobPosting")]
         if job_postings:
-            sections.append(f"\nJSON-LD: {len(job_postings)} JobPosting entries found (usable!)")
-            sections.append(f"First JobPosting:\n{json.dumps(job_postings[0], indent=2)[:3000]}")
+            sections.append(
+                f"\nJSON-LD: {len(job_postings)} JobPosting entries found (usable!)")
+            sections.append(
+                f"First JobPosting:\n{json.dumps(job_postings[0], indent=2)[:3000]}")
         else:
-            sections.append(f"\nJSON-LD: NO JobPosting entries (json_ld strategy will NOT work)")
+            sections.append(
+                f"\nJSON-LD: NO JobPosting entries (json_ld strategy will NOT work)")
         if other:
-            types = [j.get("@type", "?") if isinstance(j, dict) else "?" for j in other]
+            types = [j.get("@type", "?") if isinstance(j, dict)
+                     else "?" for j in other]
             sections.append(f"Other JSON-LD types (NOT job data): {types}")
     else:
         sections.append("\nJSON-LD: none")
 
     # API responses
     if intel["api_responses"]:
-        sections.append(f"\nAPI RESPONSES INTERCEPTED: {len(intel['api_responses'])} calls")
+        sections.append(
+            f"\nAPI RESPONSES INTERCEPTED: {len(intel['api_responses'])} calls")
         for resp in intel["api_responses"]:
             sections.append(f"\n  URL: {resp['url']}")
-            sections.append(f"  Status: {resp['status']} | Size: {resp['size']:,} chars | Type: {resp.get('type', '?')}")
+            sections.append(
+                f"  Status: {resp['status']} | Size: {resp['size']:,} chars | Type: {resp.get('type', '?')}")
             if "first_item_keys" in resp:
                 sections.append(f"  Item keys: {resp['first_item_keys']}")
-                sections.append(f"  Sample: {json.dumps(resp.get('first_item_sample', {}), indent=2)[:1000]}")
+                sections.append(
+                    f"  Sample: {json.dumps(resp.get('first_item_sample', {}), indent=2)[:1000]}")
             if "keys" in resp:
                 sections.append(f"  Object keys: {resp['keys']}")
             for k, v in resp.items():
                 if k.startswith("nested_"):
                     arr_name = k.replace("nested_", "")
-                    sections.append(f"  .{arr_name}: array of {v['count']} items")
+                    sections.append(
+                        f"  .{arr_name}: array of {v['count']} items")
                     sections.append(f"    Item keys: {v['first_item_keys']}")
-                    sections.append(f"    Sample: {json.dumps(v.get('first_item_sample', {}), indent=2)[:1000]}")
+                    sections.append(
+                        f"    Sample: {json.dumps(v.get('first_item_sample', {}), indent=2)[:1000]}")
                     for sk, sv in v.items():
                         if sk.startswith("first_item.") and isinstance(sv, dict):
                             sub_name = sk.replace("first_item.", "")
                             if "count" in sv:
-                                sections.append(f"    .{arr_name}[0].{sub_name}: array of {sv['count']} items")
-                                sections.append(f"      Item keys: {sv['first_item_keys']}")
-                                sections.append(f"      Sample: {json.dumps(sv.get('first_item_sample', {}), indent=2)[:1500]}")
+                                sections.append(
+                                    f"    .{arr_name}[0].{sub_name}: array of {sv['count']} items")
+                                sections.append(
+                                    f"      Item keys: {sv['first_item_keys']}")
+                                sections.append(
+                                    f"      Sample: {json.dumps(sv.get('first_item_sample', {}), indent=2)[:1500]}")
                             elif "keys" in sv:
-                                sections.append(f"    .{arr_name}[0].{sub_name}: object with keys {sv['keys']}")
-                                sections.append(f"      Sample: {json.dumps(sv.get('sample', {}), indent=2)[:1500]}")
+                                sections.append(
+                                    f"    .{arr_name}[0].{sub_name}: object with keys {sv['keys']}")
+                                sections.append(
+                                    f"      Sample: {json.dumps(sv.get('sample', {}), indent=2)[:1500]}")
     else:
         sections.append("\nAPI RESPONSES: none intercepted")
 
     # data-testid
     if intel["data_testids"]:
-        sections.append(f"\nDATA-TESTID ATTRIBUTES: {len(intel['data_testids'])} elements")
+        sections.append(
+            f"\nDATA-TESTID ATTRIBUTES: {len(intel['data_testids'])} elements")
         for dt in intel["data_testids"][:15]:
             text_preview = dt['text'].replace('\n', ' ')[:60]
-            sections.append(f"  <{dt['tag']} data-testid=\"{dt['testid']}\"> {text_preview}")
+            sections.append(
+                f"  <{dt['tag']} data-testid=\"{dt['testid']}\"> {text_preview}")
     else:
         sections.append("\nDATA-TESTID: none found")
 
@@ -479,10 +501,11 @@ def format_strategy_briefing(intel: dict) -> str:
 
     # Card candidates
     if intel["card_candidates"]:
-        sections.append(f"\nREPEATING ELEMENTS DETECTED: {len(intel['card_candidates'])} candidate groups")
+        sections.append(
+            f"\nREPEATING ELEMENTS DETECTED: {len(intel['card_candidates'])} candidate groups")
         for i, cand in enumerate(intel["card_candidates"]):
             sections.append(f"  [{i}] parent={cand['parent_selector']} child={cand['child_selector']} "
-                          f"count={cand['total_children']} with_text={cand['with_text']} with_links={cand['with_links']}")
+                            f"count={cand['total_children']} with_text={cand['with_text']} with_links={cand['with_links']}")
     else:
         sections.append("\nREPEATING ELEMENTS: none detected")
 
@@ -756,13 +779,15 @@ def execute_api_response(intel: dict, plan: dict) -> list[dict]:
             break
 
     if not target_data:
-        log.warning("Could not find stored API response matching: %s", url_pattern)
+        log.warning(
+            "Could not find stored API response matching: %s", url_pattern)
         return []
 
     items_path = ext.get("items_path", "")
     items = resolve_json_path_raw(target_data, items_path)
     if not isinstance(items, list):
-        log.warning("items_path '%s' did not resolve to a list (got %s)", items_path, type(items).__name__)
+        log.warning("items_path '%s' did not resolve to a list (got %s)",
+                    items_path, type(items).__name__)
         return []
 
     jobs: list[dict] = []
@@ -789,7 +814,8 @@ def execute_css_selectors(intel: dict) -> tuple[dict, list[dict]]:
         return {}, []
 
     cleaned = clean_page_html(full_html)
-    log.info("Page HTML: %s -> %s chars", f"{len(full_html):,}", f"{len(cleaned):,}")
+    log.info("Page HTML: %s -> %s chars",
+             f"{len(full_html):,}", f"{len(cleaned):,}")
 
     prompt = FULL_PAGE_SELECTOR_PROMPT.format(page_html=cleaned)
 
@@ -838,7 +864,8 @@ def execute_css_selectors(intel: dict) -> tuple[dict, list[dict]]:
                 job[field] = None
                 continue
             if el:
-                job[field] = el.get("href") if field == "url" else el.get_text(strip=True)
+                job[field] = el.get(
+                    "href") if field == "url" else el.get_text(strip=True)
             else:
                 job[field] = None
         jobs.append(job)
@@ -866,9 +893,11 @@ def _run_one_site(name: str, url: str) -> dict:
     cleaned_check = clean_page_html(full_html) if full_html else ""
     _captcha_signals = ["captcha", "are you a human", "verify you", "unusual requests",
                         "access denied", "please verify", "bot detection"]
-    _is_captcha = any(s in full_html.lower() for s in _captcha_signals) if full_html else False
+    _is_captcha = any(s in full_html.lower()
+                      for s in _captcha_signals) if full_html else False
     if len(cleaned_check) < 5000 and full_html and not _is_captcha:
-        log.info("Cleaned HTML only %s chars -- retrying headful...", f"{len(cleaned_check):,}")
+        log.info("Cleaned HTML only %s chars -- retrying headful...",
+                 f"{len(cleaned_check):,}")
         intel = collect_page_intelligence(url, headless=False)
         collect_time = time.time() - t0
         log.info("Headful done in %.1fs | JSON-LD: %d | API: %d",
@@ -884,7 +913,8 @@ def _run_one_site(name: str, url: str) -> dict:
 
     # Step 2: Strategy selection
     briefing = format_strategy_briefing(intel)
-    log.info("[2] Phase 1: Strategy selection (%s chars briefing)", f"{len(briefing):,}")
+    log.info("[2] Phase 1: Strategy selection (%s chars briefing)",
+             f"{len(briefing):,}")
 
     prompt = STRATEGY_PROMPT.format(briefing=briefing)
     try:
@@ -909,10 +939,12 @@ def _run_one_site(name: str, url: str) -> dict:
     log.info("[3] Executing %s...", strategy)
     try:
         if strategy == "json_ld":
-            log.info("Extraction plan: %s", json.dumps(plan.get("extraction", {}))[:300])
+            log.info("Extraction plan: %s", json.dumps(
+                plan.get("extraction", {}))[:300])
             jobs = execute_json_ld(intel, plan)
         elif strategy == "api_response":
-            log.info("Extraction plan: %s", json.dumps(plan.get("extraction", {}))[:300])
+            log.info("Extraction plan: %s", json.dumps(
+                plan.get("extraction", {}))[:300])
             jobs = execute_api_response(intel, plan)
         elif strategy == "css_selectors":
             log.info("-> Phase 2: Generating selectors from card examples...")
@@ -928,7 +960,8 @@ def _run_one_site(name: str, url: str) -> dict:
     # Step 4: Report
     titles = sum(1 for j in jobs if j.get("title"))
     total = len(jobs)
-    status = "PASS" if total > 0 and titles / max(total, 1) >= 0.8 else "FAIL" if total == 0 else "PARTIAL"
+    status = "PASS" if total > 0 and titles / \
+        max(total, 1) >= 0.8 else "FAIL" if total == 0 else "PARTIAL"
 
     urls = sum(1 for j in jobs if j.get("url"))
     salaries = sum(1 for j in jobs if j.get("salary"))
@@ -990,9 +1023,12 @@ def build_scrape_targets(
         if site_type == "search" and queries:
             for query in queries:
                 expanded_url = site_url
-                expanded_url = expanded_url.replace("{query_encoded}", quote_plus(query))
-                expanded_url = expanded_url.replace("{query}", quote_plus(query))
-                expanded_url = expanded_url.replace("{location_encoded}", quote_plus(default_location))
+                expanded_url = expanded_url.replace(
+                    "{query_encoded}", quote_plus(query))
+                expanded_url = expanded_url.replace(
+                    "{query}", quote_plus(query))
+                expanded_url = expanded_url.replace(
+                    "{location_encoded}", quote_plus(default_location))
                 targets.append({
                     "name": site_name,
                     "url": expanded_url,
@@ -1000,7 +1036,8 @@ def build_scrape_targets(
                 })
         else:
             expanded_url = site_url
-            expanded_url = expanded_url.replace("{location_encoded}", quote_plus(default_location))
+            expanded_url = expanded_url.replace(
+                "{location_encoded}", quote_plus(default_location))
             targets.append({
                 "name": site_name,
                 "url": expanded_url,
@@ -1037,8 +1074,8 @@ def _run_all(
         jobs = r.get("jobs", [])
         if jobs:
             new, existing = _store_jobs_filtered(conn, jobs, target["name"],
-                                                  r.get("strategy", "?"),
-                                                  accept_locs, reject_locs)
+                                                 r.get("strategy", "?"),
+                                                 accept_locs, reject_locs)
             total_new += new
             total_existing += existing
             log.info("DB: +%d new, %d already existed", new, existing)
@@ -1107,11 +1144,14 @@ def run_smart_extract(
     targets = build_scrape_targets(sites=sites, search_cfg=search_cfg)
 
     if not targets:
-        log.warning("No scrape targets configured. Create config/sites.yaml and searches.yaml.")
+        log.warning(
+            "No scrape targets configured. Create config/sites.yaml and searches.yaml.")
         return {"total_new": 0, "total_existing": 0, "passed": 0, "total": 0}
 
-    search_sites = sum(1 for s in (sites or load_sites()) if s.get("type") == "search")
-    static_sites = sum(1 for s in (sites or load_sites()) if s.get("type") != "search")
+    search_sites = sum(1 for s in (sites or load_sites())
+                       if s.get("type") == "search")
+    static_sites = sum(1 for s in (sites or load_sites())
+                       if s.get("type") != "search")
     log.info("Sites: %d searchable, %d static | Total targets: %d (workers=%d)",
              search_sites, static_sites, len(targets), workers)
 
